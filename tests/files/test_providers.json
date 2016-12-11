@@ -1,0 +1,29 @@
+[
+    {
+        "provider_name": "23HQ",
+        "provider_url": "http:\/\/www.23hq.com",
+        "endpoints": [
+            {
+                "schemes": [
+                    "http:\/\/www.23hq.com\/*\/photo\/*"
+                ],
+                "url": "http:\/\/www.23hq.com\/23\/oembed"
+            }
+        ]
+    },
+    {
+        "provider_name": "Instagram",
+        "provider_url": "https:\/\/www.instagram.com",
+        "endpoints": [
+            {
+                "schemes": [
+                    "https:\/\/www.instagram.com\/p\/*"
+                ],
+                "url": "https:\/\/api.instagram.com\/oembed",
+                "formats": [
+                    "json"
+                ]
+            }
+        ]
+    }
+]

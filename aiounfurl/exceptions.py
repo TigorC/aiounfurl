@@ -1,0 +1,2 @@
+class BaseAiounfurlException(Exception):
+    pass
