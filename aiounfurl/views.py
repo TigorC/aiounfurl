@@ -1,6 +1,6 @@
 import asyncio
 from bs4 import BeautifulSoup
-from aiounfurl.parsers import oembed, open_graph, meta_tags
+from aiounfurl.parsers import oembed, open_graph, meta_tags, twitter_cards
 
 
 async def _fetch_oembed(session, url):
@@ -18,6 +18,7 @@ async def _fetch_data(session, url, oembed_url_extractor=None):
         if oembed_url:
             result['oembed'] = await _fetch_oembed(session, oembed_url)
     result['open_graph'] = open_graph.extract_from_html(soup)
+    result['twitter_cards'] = twitter_cards.extract_from_html(soup)
     result['meta_tags'] = meta_tags.extract_from_html(soup)
     return result
 

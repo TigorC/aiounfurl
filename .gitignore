@@ -6,3 +6,5 @@
 *.sublime-workspace
 *.pyc
 __pycache__
+.vagrant
+Vagrantfile
