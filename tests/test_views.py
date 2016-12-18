@@ -4,7 +4,7 @@ import pytest
 import aiohttp
 from aiounfurl import exceptions
 from aiounfurl.parsers.oembed import providers_helpers
-from aiounfurl.views import fetch_all
+from aiounfurl.views import fetch_all, get_preview_data
 
 
 def _read_file(file_obj):
@@ -86,7 +86,7 @@ async def test_fetch_oembed_discovery(loop, test_client, test_server, files_dir)
         href = 'href="{0}"'.format(str(client.make_url('/oembed')))
         return re.sub(r'href=\"(.*)\"', href, content)
 
-    with mock.patch('test_fetch_view._read_file', new=read_file_func):
+    with mock.patch('test_views._read_file', new=read_file_func):
         result = await fetch_all(client.session, url, loop=loop)
     assert 'oembed' in result
     assert 'provider_name' in result['oembed']
@@ -153,3 +153,34 @@ async def test_error_url_with_providers(loop, test_client, test_server):
         await fetch_all(
             client.session, str(url), loop=loop, oembed_providers=providers)
     assert 'status_code: 404' in str(excinfo.value)
+
+
+async def test_get_preview_data(loop, test_client, test_server, files_dir):
+    app = aiohttp.web.Application(loop=loop)
+    app.router.add_get('/', fake_page)
+    app.router.add_get('/oembed', fake_oembed)
+
+    server = await test_server(app)
+    client = await test_client(server)
+
+    file_path = str(files_dir / 'og.html')
+    url = client.make_url('/').with_query({'file_path': file_path})
+    providers = _get_test_providers(url, client)
+    result = await get_preview_data(
+        client.session, str(url), loop=loop, oembed_providers=providers)
+    assert result['image'] == 'http://farm4.static.flickr.com/3123/2341623661_7c99f48bbf_m.jpg'
+
+    url = client.make_url('/').with_query({'file_path': file_path})
+    result = await get_preview_data(client.session, url, loop=loop)
+    assert result['title'] == 'The Rock'
+
+    file_path = str(files_dir / 'twitter_cards.html')
+    url = client.make_url('/').with_query({'file_path': file_path})
+    result = await get_preview_data(client.session, url, loop=loop)
+    assert result['image'] == 'https://secure.example.com/ogp.jpg'
+
+    file_path = str(files_dir / 'meta_tags.html')
+    url = client.make_url('/').with_query({'file_path': file_path})
+    result = await get_preview_data(client.session, url, loop=loop)
+    assert result['title'] == 'The Rock (1996)'
+    assert result['description'] == '150 words'
