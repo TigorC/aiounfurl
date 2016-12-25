@@ -1,10 +1,14 @@
+import pathlib
 import asyncio
 import aiohttp
 from marshmallow import Schema, fields, ValidationError
-from aiohttp.web import Application, json_response, run_app
+from aiohttp.web import Application, json_response, run_app, Response
 from aiounfurl import exceptions
 from aiounfurl.parsers.oembed import providers_helpers
 from aiounfurl.views import get_preview_data, fetch_all
+
+
+home_content = (pathlib.Path(__file__).parent / 'index.html').read_text()
 
 
 def _validate_resolution(value):
@@ -47,9 +51,14 @@ async def preview(request):
     return await _base_view(request, get_preview_data)
 
 
+async def home(request):
+    return Response(text=home_content, content_type='text/html')
+
+
 async def init(loop):
     app = Application(loop=loop)
-    app.router.add_get('/', extract)
+    app.router.add_get('/', home)
+    app.router.add_get('/extract', extract)
     app.router.add_get('/preview', preview)
     return app
 

@@ -109,7 +109,7 @@ async def get_preview_data(session, url, loop=None, oembed_providers=None,
 
     # twitter cards image
     if not result['image'] and data.get('twitter_cards'):
-        result['image'] = data['twitter_cards']['image']
+        result['image'] = data['twitter_cards'].get('image')
 
     # from meta tags
     if not result['image'] and data.get('meta_tags'):

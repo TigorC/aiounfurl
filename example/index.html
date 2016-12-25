@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>aiounfurl</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.7/semantic.min.css" />
+  <style type="text/css">
+    body {
+      padding-top: 7em;
+    }
+    .big.or {
+      height: 3.3em !important;
+    }
+    #result:empty {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="ui container">
+    <div class="ui grid">
+      <div class="two wide column"></div>
+      <div class="twelve wide column">
+        <form class="ui big form">
+          <div class="fields">
+            <div class="ten wide field">
+              <input type="url" name="url" id="url" placeholder="URL link" required>
+            </div>
+            <div class="six wide field">
+              <div class="ui buttons">
+                <button type="button" id="extract-btn" class="ui big button">Extract</button>
+                <div class="or big"></div>
+                <button type="button" id="preview-btn" class="ui big button">Preview</button>
+              </div>
+            </div>
+          </div>
+        </form>
+        <div class="ui segment" id="result"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.6/handlebars.min.js"></script>
+  <script id="preview-template" type="text/x-handlebars-template">
+    <div class="ui items">
+      <div class="item">
+        {{#if image}}
+        <div class="image">
+          <img src="{{image}}">
+        </div>
+        {{/if}}
+        <div class="content">
+          <a class="header" href="{{url}}" target="_blank">{{title}}</a>
+          <div class="description">
+            <p>{{description}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+  <script id="extract-template" type="text/x-handlebars-template">
+    <pre>
+      {{data}}
+    </pre>
+  </script>
+  <script id="error-template" type="text/x-handlebars-template">
+    <div class="ui negative message">
+        <div class="header">
+          Server error
+        </div>
+        <pre>{{data}}</pre>
+    </div>
+  </script>
+  <script type="text/javascript">
+    var urlInput = $('#url');
+    var resultContainer = $('#result');
+    var previewTemplate = Handlebars.compile($("#preview-template").html());
+    var extractTemplate = Handlebars.compile($("#extract-template").html());
+    var errorTemplate = Handlebars.compile($("#error-template").html());
+    var updateButtons = function() {
+      $('#extract-btn').prop('disabled', !urlInput[0].validity.valid);
+      $('#preview-btn').prop('disabled', !urlInput[0].validity.valid);
+    }
+    updateButtons();
+    urlInput.keyup(function() {
+      updateButtons();
+    });
+    $('#extract-btn').click(function() {
+      resultContainer.addClass('loading');
+      $.getJSON('/extract', {'url': urlInput.val()}, function(result) {
+        resultContainer.html(extractTemplate({data: JSON.stringify(result,null, 4)}));
+      })
+      .fail(function(res) {
+        resultContainer.html(errorTemplate({data: JSON.stringify(res.responseJSON, null, 4)}));
+      })
+      .always(function() {
+        resultContainer.removeClass('loading');
+      });
+    });
+    $('#preview-btn').click(function() {
+      var url = urlInput.val();
+      resultContainer.addClass('loading');
+      $.getJSON('/preview', {'url': urlInput.val()}, function(result) {
+        result['url'] = url;
+        resultContainer.html(previewTemplate(result));
+      })
+      .fail(function(res) {
+        resultContainer.html(errorTemplate({data: JSON.stringify(res.responseJSON, null, 4)}));
+      })
+      .always(function() {
+        resultContainer.removeClass('loading');
+      });
+    });
+  </script>
+</body>
+</html>
