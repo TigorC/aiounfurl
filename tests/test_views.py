@@ -1,5 +1,6 @@
 import re
 import mock
+import asyncio
 import pytest
 import aiohttp
 from aiounfurl import exceptions
@@ -184,3 +185,21 @@ async def test_get_preview_data(loop, test_client, test_server, files_dir):
     result = await get_preview_data(client.session, url, loop=loop)
     assert result['title'] == 'The Rock (1996)'
     assert result['description'] == '150 words'
+
+
+async def test_unused_url(loop):
+    err = OSError(1, "permission error")
+    req = mock.Mock()
+    req_factory = mock.Mock(return_value=req)
+    req.send = mock.Mock(side_effect=err)
+    session = aiohttp.ClientSession(request_class=req_factory, loop=loop)
+    url = 'http://test.org/'
+
+    @asyncio.coroutine
+    def create_connection(req):
+        # return self.transport, self.protocol
+        return mock.Mock(), mock.Mock()
+
+    session._connector._create_connection = create_connection
+    with pytest.raises(exceptions.FetchPageException):
+        await fetch_all(session, url, loop=loop)

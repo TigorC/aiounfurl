@@ -8,3 +8,7 @@ class InvalidURLException(BaseAiounfurlException):
 
 class InvalidOEmbedEndpoint(BaseAiounfurlException):
     pass
+
+
+class FetchPageException(BaseAiounfurlException):
+    pass

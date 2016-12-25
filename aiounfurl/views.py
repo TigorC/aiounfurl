@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 from bs4 import BeautifulSoup
 from aiounfurl import exceptions
 from aiounfurl.parsers import oembed, open_graph, meta_tags, twitter_cards
@@ -16,14 +17,23 @@ async def _fetch_oembed(session, url):
         return await resp.json()
 
 
-async def _fetch_data(session, url, oembed_url_extractor=None):
-    result = {}
+async def _fetch_page_html(session, url):
     async with session.get(url) as resp:
         if resp.status != OK_STATUS_CODE:
             msg = 'Error getting data for url {0}, status_code: {1}'.format(
                 url, resp.status)
             raise exceptions.InvalidURLException(msg)
-        html = await resp.text()
+        return await resp.text()
+
+
+async def _fetch_data(session, url, oembed_url_extractor=None):
+    result = {}
+    try:
+        html = await _fetch_page_html(session, url)
+    except aiohttp.errors.ClientError as exc:
+        msg = 'Error getting page {0}, exception: {1}'.format(
+            url, str(exc))
+        raise exceptions.FetchPageException(msg)
     soup = BeautifulSoup(html, 'html5lib')
     if oembed_url_extractor:
         oembed_url = oembed_url_extractor.get_oembed_url_from_html(soup)
@@ -48,7 +58,10 @@ async def fetch_all(session, url, loop=None, oembed_providers=None,
             _fetch_data(session, url)]
         oembed_result, other_results = await asyncio.gather(
             *tasks, loop=loop, return_exceptions=True)
-        if isinstance(other_results, exceptions.InvalidURLException):
+        raise_exceptions = (
+            exceptions.InvalidURLException,
+            exceptions.FetchPageException)
+        if isinstance(other_results, raise_exceptions):
             raise other_results
         if isinstance(oembed_result, dict):
             result['oembed'] = oembed_result
