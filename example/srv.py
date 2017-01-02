@@ -1,3 +1,4 @@
+import sys
 import pathlib
 import asyncio
 import aiohttp
@@ -67,4 +68,5 @@ loop = asyncio.get_event_loop()
 app = loop.run_until_complete(init(loop))
 app['providers'] = providers_helpers.prepare_providers(
     providers_helpers.load_providers())
-run_app(app)
+if len(sys.argv) > 1 and sys.argv[1] == 'runserver':
+    run_app(app)
