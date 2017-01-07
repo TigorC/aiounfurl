@@ -4,6 +4,7 @@
 .coverage
 *.sublime-project
 *.sublime-workspace
+*.idea/
 *.pyc
 __pycache__
 .vagrant
