@@ -1,6 +1,7 @@
 language: python
 python: 3.5
-install: pip install --upgrade pip setuptools tox virtualenv
+install: pip install --upgrade pip setuptools tox virtualenv coveralls
 env:
   - TOXENV=py35
 script: tox
+after_success: coveralls
