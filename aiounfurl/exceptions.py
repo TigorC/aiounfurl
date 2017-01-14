@@ -2,11 +2,7 @@ class BaseAiounfurlException(Exception):
     pass
 
 
-class InvalidURLException(BaseAiounfurlException):
-    pass
-
-
-class InvalidOEmbedEndpoint(BaseAiounfurlException):
+class ResourceErrorResponse(BaseAiounfurlException):
     pass
 
 

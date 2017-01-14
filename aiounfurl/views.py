@@ -8,28 +8,19 @@ from aiounfurl.parsers import oembed, open_graph, meta_tags, twitter_cards
 OK_STATUS_CODE = 200
 
 
-async def _fetch_oembed(session, url):
-    async with session.get(url) as resp:
-        if resp.status != OK_STATUS_CODE:
-            msg = 'Error getting oembed for endpoint {0}, status_code: {1}'
-            msg = msg.format(url, resp.status)
-            raise exceptions.InvalidOEmbedEndpoint(msg)
-        return await resp.json()
-
-
-async def _fetch_page_html(session, url):
+async def _fetch(session, url, read_response_func='text'):
     async with session.get(url) as resp:
         if resp.status != OK_STATUS_CODE:
             msg = 'Error getting data for url {0}, status_code: {1}'.format(
                 url, resp.status)
-            raise exceptions.InvalidURLException(msg)
-        return await resp.text()
+            raise exceptions.ResourceErrorResponse(msg)
+        return await getattr(resp, read_response_func)()
 
 
 async def _fetch_data(session, url, oembed_url_extractor=None):
     result = {}
     try:
-        html = await _fetch_page_html(session, url)
+        html = await _fetch(session, url)
     except aiohttp.errors.ClientError as exc:
         msg = 'Error getting page {0}, exception: {1}'.format(
             url, str(exc))
@@ -38,7 +29,8 @@ async def _fetch_data(session, url, oembed_url_extractor=None):
     if oembed_url_extractor:
         oembed_url = oembed_url_extractor.get_oembed_url_from_html(soup)
         if oembed_url:
-            result['oembed'] = await _fetch_oembed(session, oembed_url)
+            result['oembed'] = await _fetch(
+                session, oembed_url, read_response_func='json')
     result['open_graph'] = open_graph.extract_from_html(soup)
     result['twitter_cards'] = twitter_cards.extract_from_html(soup)
     result['meta_tags'] = meta_tags.extract_from_html(soup)
@@ -54,18 +46,18 @@ async def fetch_all(session, url, loop=None, oembed_providers=None,
     result = {}
     if oembed_url:
         tasks = [
-            _fetch_oembed(session, oembed_url),
+            _fetch(session, oembed_url, read_response_func='json'),
             _fetch_data(session, url)]
         oembed_result, other_results = await asyncio.gather(
             *tasks, loop=loop, return_exceptions=True)
         raise_exceptions = (
-            exceptions.InvalidURLException,
+            exceptions.ResourceErrorResponse,
             exceptions.FetchPageException)
         if isinstance(other_results, raise_exceptions):
             raise other_results
         if isinstance(oembed_result, dict):
             result['oembed'] = oembed_result
-        elif isinstance(oembed_result, exceptions.InvalidOEmbedEndpoint):
+        elif isinstance(oembed_result, raise_exceptions):
             result['oembed'] = {
                 'error': str(oembed_result)}
         result.update(other_results)

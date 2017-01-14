@@ -117,7 +117,7 @@ async def test_error_response(loop, test_client, test_server):
     server = await test_server(app)
     client = await test_client(server)
     url = client.make_url('/')
-    with pytest.raises(exceptions.InvalidURLException) as excinfo:
+    with pytest.raises(exceptions.ResourceErrorResponse) as excinfo:
         await fetch_all(client.session, str(url), loop=loop)
     assert 'status_code: 404' in str(excinfo.value)
 
@@ -150,7 +150,7 @@ async def test_error_url_with_providers(loop, test_client, test_server):
 
     url = client.make_url('/')
     providers = _get_test_providers(url, client)
-    with pytest.raises(exceptions.InvalidURLException) as excinfo:
+    with pytest.raises(exceptions.ResourceErrorResponse) as excinfo:
         await fetch_all(
             client.session, str(url), loop=loop, oembed_providers=providers)
     assert 'status_code: 404' in str(excinfo.value)
