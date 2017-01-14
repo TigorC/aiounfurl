@@ -1,12 +1,15 @@
+import pathlib
 from setuptools import setup
+from aiounfurl import VERSION
 
 
+readme_file_path = pathlib.Path(__file__).parent / 'README.md'
 setup(
     name="aiounfurl",
-    version="0.1",
+    version=".".join(map(str, VERSION)),
     author="Igor Tokarev",
     author_email="TigorC@gmail.com",
-    description="Extract information from web page",
+    description=readme_file_path.read_text(),
     license="BSD License",
     keywords="async embed preview",
     url="https://github.com/tigorc/aiounfurl",
