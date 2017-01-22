@@ -85,9 +85,14 @@
     urlInput.keyup(function() {
       updateButtons();
     });
+
+    function getUnfurlParams() {
+      return {url: urlInput.val(), languages: navigator.languages}
+    }
+
     $('#extract-btn').click(function() {
       resultContainer.addClass('loading');
-      $.getJSON('/extract', {'url': urlInput.val()}, function(result) {
+      $.getJSON('/extract', getUnfurlParams(), function(result) {
         resultContainer.html(extractTemplate({data: JSON.stringify(result,null, 4)}));
       })
       .fail(function(res) {
@@ -100,7 +105,7 @@
     $('#preview-btn').click(function() {
       var url = urlInput.val();
       resultContainer.addClass('loading');
-      $.getJSON('/preview', {'url': urlInput.val()}, function(result) {
+      $.getJSON('/preview', getUnfurlParams(), function(result) {
         result['url'] = url;
         resultContainer.html(previewTemplate(result));
       })
