@@ -10,7 +10,7 @@ def extract(soup):
     description = article.find('p')
     if description and description.text:
         result['description'] = description.text
-    first_image = first_h1.find_next_sibling('img')
+    first_image = article.find('img')
     if first_image and first_image['src'] != '':
         result['image'] = first_image['src']
     return result
