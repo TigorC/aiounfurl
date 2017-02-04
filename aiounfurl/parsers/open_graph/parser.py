@@ -19,5 +19,6 @@ def extract_from_html(soup):
         if tag.has_attr('property') and 'og:' in tag['property']:
             tag_property = tag['property']
             property_name_parts = tag_property.replace('og:', '', 1).split(':')
-            result = _add_to_result(result, property_name_parts, tag['content'])
+            content = tag.get('content', tag.get('value'))
+            result = _add_to_result(result, property_name_parts, content)
     return result

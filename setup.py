@@ -21,6 +21,7 @@ setup(
         'html5lib',
         'aiohttp'],
     packages=['aiounfurl'],
+    zip_safe=False,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
