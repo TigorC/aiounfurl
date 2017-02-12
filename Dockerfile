@@ -8,4 +8,4 @@ RUN pip install -r /srv/app/requirements.txt
 ADD ./example/ /srv/app/
 EXPOSE 8080
 ENV PYTHONPATH $PYTHONPATH:/srv/app
-CMD gunicorn srv:app --bind 0.0.0.0:8080 --worker-class aiohttp.worker.GunicornWebWorker
+CMD ["gunicorn", "srv:app", "--bind", "0.0.0.0:8080", "--worker-class", "aiohttp.worker.GunicornWebWorker"]
