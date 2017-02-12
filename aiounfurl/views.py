@@ -2,14 +2,15 @@ import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 from aiounfurl import exceptions
+from aiounfurl.headers_utils import generate_headers
 from aiounfurl.parsers import oembed, open_graph, meta_tags, twitter_cards
 
 
 OK_STATUS_CODE = 200
 
 
-async def _fetch(session, url, read_response_func='text'):
-    async with session.get(url) as resp:
+async def _fetch(session, url, read_response_func='text', headers=None):
+    async with session.get(url, headers=headers) as resp:
         if resp.status != OK_STATUS_CODE:
             msg = 'Error getting data for url {0}, status_code: {1}'.format(
                 url, resp.status)
@@ -17,10 +18,10 @@ async def _fetch(session, url, read_response_func='text'):
         return await getattr(resp, read_response_func)()
 
 
-async def _fetch_data(session, url, oembed_url_extractor=None):
+async def _fetch_data(session, url, oembed_url_extractor=None, headers=None):
     result = {}
     try:
-        html = await _fetch(session, url)
+        html = await _fetch(session, url, headers=headers)
     except aiohttp.errors.ClientError as exc:
         msg = 'Error getting page {0}, exception: {1}'.format(
             url, str(exc))
@@ -30,7 +31,8 @@ async def _fetch_data(session, url, oembed_url_extractor=None):
         oembed_url = oembed_url_extractor.get_oembed_url_from_html(soup)
         if oembed_url:
             result['oembed'] = await _fetch(
-                session, oembed_url, read_response_func='json')
+                session, oembed_url, read_response_func='json',
+                headers=headers)
     result['open_graph'] = open_graph.extract_from_html(soup)
     result['twitter_cards'] = twitter_cards.extract_from_html(soup)
     result['meta_tags'] = meta_tags.extract_from_html(soup)
@@ -38,16 +40,19 @@ async def _fetch_data(session, url, oembed_url_extractor=None):
 
 
 async def fetch_all(session, url, loop=None, oembed_providers=None,
-                    oembed_params=None):
+                    oembed_params=None, prefered_languages=None):
     oembed_url_extractor = oembed.OEmbedURLExtractor(
         oembed_providers or [], params=oembed_params)
     oembed_url = oembed_url_extractor.get_oembed_url(url)
 
+    headers = generate_headers(prefered_languages)
     result = {}
     if oembed_url:
         tasks = [
-            _fetch(session, oembed_url, read_response_func='json'),
-            _fetch_data(session, url)]
+            _fetch(
+                session, oembed_url, read_response_func='json',
+                headers=headers),
+            _fetch_data(session, url, headers=headers)]
         oembed_result, other_results = await asyncio.gather(
             *tasks, loop=loop, return_exceptions=True)
         raise_exceptions = (
@@ -62,19 +67,22 @@ async def fetch_all(session, url, loop=None, oembed_providers=None,
                 'error': str(oembed_result)}
         result.update(other_results)
     else:
-        other_results = await _fetch_data(session, url, oembed_url_extractor)
+        other_results = await _fetch_data(
+            session, url, oembed_url_extractor=oembed_url_extractor,
+            headers=headers)
         result.update(other_results)
     return result
 
 
 async def get_preview_data(session, url, loop=None, oembed_providers=None,
-                           oembed_params=None):
+                           oembed_params=None, prefered_languages=None):
     data = await fetch_all(
         session,
         url,
         loop=loop,
         oembed_providers=oembed_providers,
-        oembed_params=oembed_params)
+        oembed_params=oembed_params,
+        prefered_languages=prefered_languages)
     result = {'title': None, 'description': None, 'image': None}
     sources = ['oembed', 'open_graph', 'twitter_cards', 'meta_tags']
     for field in ['title', 'description']:
